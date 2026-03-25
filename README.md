@@ -16,6 +16,20 @@ Dự án web bán hàng được xây dựng để phục vụ môn Kiểm thử
 
 Luồng: Trình duyệt → Frontend → gọi API → Backend (Express) → SQL Server
 
+## Chế độ CORS (CORS_MODE)
+
+Backend hỗ trợ 3 chế độ cấu hình CORS điều khiển qua biến môi trường `CORS_MODE`:
+
+- `vulnerable` (mặc định): `origin: true` (reflect), `credentials: true`
+- `broken`: `origin: "*"`, `credentials: true` (trình duyệt sẽ chặn credentials – dùng cho test âm tính)
+- `secure`: `origin: ["http://localhost:3000"]`, `credentials: true`
+
+Ví dụ chạy (PowerShell):
+
+```
+$env:CORS_MODE="vulnerable"; node server.js
+```
+
 ## Các “lỗi” cố ý để kiểm thử
 
 - CORS sai: phản chiếu Origin động, đồng thời bật `Access-Control-Allow-Credentials: true` (vô cùng nguy hiểm)
@@ -41,9 +55,13 @@ Test_CK/
 │  ├─ signup.html
 │  ├─ app.js
 │  └─ style.css
+├─ tests/
+│  ├─ api.test.js
+│  └─ cors.test.js
 ├─ Database/
 │  └─ store.sql        (nguồn dữ liệu tham chiếu gốc)
-└─ LifestyleStore/     (mã mẫu PHP tham khảo – không dùng trực tiếp)
+├─ attacker.html        (website giả lập tấn công CORS – chạy ở cổng 4000)
+
 ```
 
 ## Cách chạy
@@ -69,6 +87,15 @@ python -m http.server 3000
 
 Truy cập: http://localhost:3000/
 
+3) Attacker site (mô phỏng website độc hại khác origin)
+
+```
+# Chạy ở thư mục gốc dự án để phục vụ attacker.html
+python -m http.server 4000
+```
+
+Mở: http://localhost:4000/attacker.html – nhấn các nút để gửi request cross-origin với `credentials: "include"` tới backend.
+
 ## Dữ liệu mẫu & Tài khoản mẫu
 
 - Khi khởi động backend lần đầu, hệ thống tự tạo bảng `users`, `items`, `users_items` và seed 12 sản phẩm có ảnh (liên kết đến `frontend/img`).
@@ -78,11 +105,12 @@ Truy cập: http://localhost:3000/
 
 ## Backend – Cấu hình CORS & Cookie
 
-- CORS cố ý phản chiếu Origin động (reflect) + `Access-Control-Allow-Credentials: true`. Tham khảo: [server.js](file:///d:/A.monhoc/Test_CK/backend/server.js#L10-L22)
-- Cookie đăng nhập đặt từ API `/api/login` với:
+- CORS: phản chiếu Origin động (reflect) và bật credentials bằng middleware chuẩn `cors` với `origin: true, credentials: true`. Tham khảo: [server.js](file:///d:/A.monhoc/Test_CK/backend/server.js#L13-L21)
+- Cookie phiên khi login:
+  - `sameSite: "Lax"`
   - `secure: false`
   - `httpOnly: false`
-  - `sameSite: "Lax"` (có thể đổi thành `"None"` trong [server.js](file:///d:/A.monhoc/Test_CK/backend/server.js#L183-L186) để kiểm thử các trường hợp cross-site nghiêm trọng hơn)
+  - Lưu ý: cấu hình này giúp hệ thống chạy được trên localhost, đồng thời vẫn giữ lỗ hổng CORS do cho phép nhiều origin có credential.
 
 ## API chính
 
@@ -102,12 +130,19 @@ Tất cả API base URL: `http://localhost:5000`
   - GET `/api/items` – công khai
   - GET `/api/items/search?q=keyword` – công khai
   - GET `/api/items/category/:categoryName` – công khai
+  - POST `/api/items` – yêu cầu đăng nhập (thêm sản phẩm)
+  - PUT `/api/items/:id` – yêu cầu đăng nhập (sửa sản phẩm)
+  - DELETE `/api/items/:id` – yêu cầu đăng nhập (xóa sản phẩm)
 
 - Giỏ hàng (yêu cầu đăng nhập qua cookie)
   - POST `/api/cart` – Body: `{ itemId }` – thêm vào giỏ (trạng thái `"Added to cart"`)
   - GET `/api/cart` – lấy danh sách item trong giỏ
   - DELETE `/api/cart/:itemId` – xóa một item khỏi giỏ
   - POST `/api/checkout` – chuyển toàn bộ `"Added to cart"` → `"Confirmed"` (giả lập thanh toán)
+
+- Đơn hàng (yêu cầu đăng nhập)
+  - GET `/api/orders` – danh sách đơn của người dùng
+  - GET `/api/orders/:id` – chi tiết đơn (sản phẩm, tổng tiền)
 
 Các handler nằm trong: [server.js](file:///d:/A.monhoc/Test_CK/backend/server.js)
 
@@ -132,7 +167,7 @@ curl -i http://localhost:5000/api/items \
   -H "Cookie: userId=1"
 ```
 
-Kỳ vọng: Response có `Access-Control-Allow-Origin: http://evil.local` và `Access-Control-Allow-Credentials: true`.
+Kỳ vọng: Response có `Access-Control-Allow-Origin: http://evil.local` và `Access-Control-Allow-Credentials: true` (do reflect origin).
 
 2) Preflight request (OPTIONS)
 
@@ -151,7 +186,25 @@ Kỳ vọng: 200 với các header CORS cho phép.
 
 4) So sánh hành vi khi đổi `sameSite`
 
-- Trong [server.js](file:///d:/A.monhoc/Test_CK/backend/server.js#L183-L186), chuyển `sameSite: "Lax"` → `"None"` để kiểm thử mức độ rủi ro cao hơn với cross-site.
+- Trong [server.js](file:///d:/A.monhoc/Test_CK/backend/server.js), chuyển `sameSite: "Lax"` → `"None"` để kiểm thử mức độ rủi ro cao hơn với cross-site.
+
+## Test tự động
+
+Cài đặt:
+
+```
+cd backend
+npm i -D jest supertest
+```
+
+Chạy test (backend đang chạy tại http://localhost:5000):
+
+```
+npx jest ../tests --runInBand
+```
+
+- Test API: tests/api.test.js
+- Test CORS: tests/cors.test.js
 
 ## Kiểm thử Authentication & Security
 
@@ -179,4 +232,3 @@ Kỳ vọng: 200 với các header CORS cho phép.
 ---
 
 Nếu bạn muốn tôi bổ sung bài test minh họa (curl/Postman hoặc file HTML “kẻ tấn công” mô phỏng cross-site), hãy nói chức năng muốn kiểm thử sâu hơn (CORS preflight, gửi credentials tự động, thao tác giỏ hàng từ site khác, v.v.).
-
