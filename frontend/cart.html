@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giỏ hàng - Demo Store</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">Demo Store</div>
+    <div>
+      <a href="index.html">Trang chủ</a>
+      <a href="products.html">Sản phẩm</a>
+      <a id="cart-link" href="cart.html" class="hidden">Giỏ hàng</a>
+      <a id="login-link" href="login.html">Đăng nhập</a>
+      <button id="logout-btn" class="logout-btn hidden" onclick="logout()">Đăng xuất</button>
+    </div>
+  </nav>
+
+  <section class="container" style="padding-top: 40px;">
+    <h1 style="margin-bottom: 30px;">Giỏ hàng của bạn</h1>
+    <div class="cart-layout">
+      <div id="cart-items" class="cart-items-container">
+        <!-- Cart items will be rendered here by JavaScript -->
+      </div>
+      <div id="cart-summary" class="cart-summary-container">
+        <!-- Cart summary will be rendered here by JavaScript -->
+      </div>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

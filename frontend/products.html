@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Products - Demo Store</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">Demo Store</div>
+    <div>
+      <a href="index.html">Trang chủ</a>
+      <a href="products.html">Sản phẩm</a>
+      <a id="cart-link" href="cart.html" class="hidden">Giỏ hàng</a>
+      <a id="login-link" href="login.html">Đăng nhập</a>
+      <button id="logout-btn" class="logout-btn hidden" onclick="logout()">Đăng xuất</button>
+    </div>
+  </nav>
+
+  <section style="background: linear-gradient(135deg, #d95518 0%, #cde30c 100%); padding: 40px; color: white;">
+    <div class="container">
+      <h1 style="font-size: 36px; margin: 0; font-weight: 700;">Danh sách sản phẩm</h1>
+      <p style="margin-top: 10px; opacity: 0.9;">Khám phá bộ sưu tập sản phẩm cao cấp của chúng tôi</p>
+      <div class="search-container" style="margin-top: 20px;">
+        <input type="text" id="search-input" placeholder="Tìm kiếm sản phẩm..." style="padding: 10px; width: 300px; border-radius: 5px; border: none;">
+        <button onclick="searchProducts()" style="padding: 10px 15px; border-radius: 5px; border: none; background-color: #FF5733; color: white; cursor: pointer; margin-left: 10px;">Tìm kiếm</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="products" class="grid"></div>
+
+  <div id="loading" class="loading" style="display: none;">Loading products...</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
