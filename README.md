@@ -229,6 +229,4 @@ npx jest ../tests --runInBand
 - Frontend logic: [app.js](file:///d:/A.monhoc/Test_CK/frontend/app.js)
 - Giao diện: [style.css](file:///d:/A.monhoc/Test_CK/frontend/style.css)
 
----
 
-Nếu bạn muốn tôi bổ sung bài test minh họa (curl/Postman hoặc file HTML “kẻ tấn công” mô phỏng cross-site), hãy nói chức năng muốn kiểm thử sâu hơn (CORS preflight, gửi credentials tự động, thao tác giỏ hàng từ site khác, v.v.).
